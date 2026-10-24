@@ -212,16 +212,41 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}
 .workspace{display:flex;justify-content:center;align-items:center;min-height:100vh;height:100vh;position:sticky;top:0;overflow:hidden;background:radial-gradient(ellipse at 50% 40%,light-dark(#fff,#2a2733),light-dark(#e9e8ed,#16151a) 72%)}
 .top-label{position:absolute;top:14px;left:18px;color:#8b8494;font-size:11px;z-index:2}
 body.reader{overflow:hidden}.reader .builder,.reader .top-label{display:none}.reader #app{display:block}.reader .workspace{height:100vh!important;height:100dvh!important;min-height:0;position:relative}
-@media(max-width:850px){#app{grid-template-columns:1fr}.builder{max-height:none;order:2}.workspace{order:1;position:relative;height:880px}}
+button,summary,label.fbtn,label.th{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.mtabs{display:none}
+@media(max-width:850px){
+ #app{display:block}
+ .builder{max-height:none;border:0;min-height:100vh;min-height:100dvh;padding:16px 16px calc(84px + env(safe-area-inset-bottom))}
+ .brand{font-size:20px}
+ .workspace{position:fixed;left:0;right:0;top:0;bottom:calc(56px + env(safe-area-inset-bottom));height:auto;min-height:0}
+ body.mp-edit .workspace{display:none}
+ body.mp-prev .builder{display:none}
+ .top-label{display:none}
+ .f input[type=text],.f select,.f textarea{font-size:16px;padding:11px 12px;border-radius:12px}
+ .f>label{font-size:12px}
+ .two,.three{gap:8px}
+ .three{grid-template-columns:1fr 1fr}
+ .card summary{padding:14px 12px;min-height:52px}
+ .x{padding:10px 8px;font-size:13px}
+ .fbtn{padding:11px 14px;font-size:13px}
+ .th{width:64px;height:64px}.th button{width:26px;height:26px;font-size:16px}
+ .primary,.secondary{padding:15px 14px;font-size:15px}
+ .ghost{padding:13px;font-size:14px}
+ .chk{font-size:14px;padding:6px 0}.chk input{width:20px;height:20px}
+ .mtabs{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:50;height:calc(56px + env(safe-area-inset-bottom));padding-bottom:env(safe-area-inset-bottom);background:light-dark(#fff,#1c1c22);border-top:1px solid light-dark(#e6e2eb,#383640)}
+ .mtabs button{flex:1;border:0;background:none;color:light-dark(#77717f,#aaa5b4);font-size:14px;font-weight:700}
+ .mtabs button.on{color:#a855f7}
+}
 </style>
 </head>
-<body>
+<body class="mp-edit">
 <main id="app">
   <aside class="builder" id="bld"></aside>
   <section class="workspace" id="ws"><div class="top-label">LIVE PREVIEW <span style="color:#a855f7">●</span></div>
     <div class="device" id="dev"><div class="island"></div><div id="scr"></div></div>
   </section>
 </main>
+<nav class="mtabs" id="mtabs"><button data-mp="edit" class="on">✎ 편집</button><button data-mp="prev">▶ 미리보기</button></nav>
 <input type="file" id="jsonIn" accept="application/json" hidden>
 <script>
 /* ============================================================
@@ -631,30 +656,13 @@ function defaultCfg(){return{
     {id:uid(),username:'friend_04',name:'친구 4',bio:'',avatar:sil('#d6c27f'),note:'',stories:[],posts:[{imgs:[pst('#d4fc79','#96e6a1','🍀')],caption:'.',likes:51,comments:1,ago:'1일 전'}],dm:'2026-10-20 16:40 | 사진 보내줄게!',replyText:'',dmAgo:'2일'}
   ]};}
 try{localStorage.removeItem('ifb-v2')}catch(e){}
-const ARTIFACT_URL='https://claude.ai/artifact/BL89EGE51J4kmZKKUsyGif';
-function openBox(msg){
-  const d=document.createElement('div');d.style.cssText='position:fixed;inset:0;background:#0008;z-index:999;display:grid;place-items:center;padding:20px';
-  d.innerHTML='<div style="background:light-dark(#fff,#2a2733);border-radius:16px;padding:18px;max-width:420px;width:100%;font-size:14px"><div id="lkm" style="line-height:1.5;margin-bottom:10px"></div><input id="lki" type="text" readonly style="display:none;width:100%;padding:10px;border-radius:10px;border:1px solid #8886;background:transparent;color:inherit"><button id="lkc" class="primary" style="display:none">링크 복사</button><button id="lkx" class="secondary">닫기</button></div>';
-  document.body.appendChild(d);
-  const m=d.querySelector('#lkm'),i=d.querySelector('#lki'),c=d.querySelector('#lkc');m.textContent=msg;d.querySelector('#lkx').onclick=()=>d.remove();
-  return{set(t){m.textContent=t},link(l){m.textContent='독자용 링크가 만들어졌어요. 이 링크를 독자에게 보내세요.';i.value=l;i.style.display='block';i.select();c.style.display='block';c.onclick=()=>{i.select();try{navigator.clipboard.writeText(l).then(()=>{c.textContent='복사됨!'})}catch(e){document.execCommand('copy');c.textContent='복사됨!'}}}}
-}
-async function makeLink(){
-  const box=openBox('링크를 만드는 중이에요...');
-  try{
-    const as=window.claude&&await window.claude.use('assets');
-    if(!as){box.set('이 환경에서는 링크를 만들 수 없어요. 이 페이지를 만든 계정(편집 권한)으로 열어 주세요.');return}
-    const r=await as.upload(new Blob([JSON.stringify(cfg)],{type:'application/json'}));
-    box.link(ARTIFACT_URL+'#'+r.id);
-  }catch(e){box.set('링크를 만들지 못했어요: '+((e&&e.message)||'알 수 없는 오류'))}
-}
 function norm(c){c.explore=c.explore||[];c.gallery=c.gallery||[];c.memos=c.memos||[];c.sms=c.sms||[];if(c.autoSec===undefined)c.autoSec=8;return c}
 let cfg=(()=>{try{const s=localStorage.getItem('ifb-v3');if(s){const c=JSON.parse(s);if(c&&c.me&&c.accounts)return norm(c)}}catch(e){}return defaultCfg()})();
-const RID=(location.hash.match(/^#([0-9a-f]{32})$/)||[])[1];
 const phone=mountPhone(document.getElementById('scr'),cfg);
-if(RID){document.body.classList.add('reader');fetch('/_blob/'+RID).then(r=>r.json()).then(c=>{cfg=norm(c);phone.update(cfg)}).catch(()=>{})}
 const dev=document.getElementById('dev');
-const fit=()=>fitDevice(dev,RID?8:18,!!RID);addEventListener('resize',fit);fit();
+const fit=()=>{if(dev.parentElement.clientHeight<50)return;fitDevice(dev,innerWidth<=850?10:18,false)};addEventListener('resize',fit);fit();
+function setMP(v){document.body.classList.toggle('mp-edit',v==='edit');document.body.classList.toggle('mp-prev',v==='prev');document.querySelectorAll('#mtabs button').forEach(b=>b.classList.toggle('on',b.dataset.mp===v));if(v==='prev')requestAnimationFrame(fit);else window.scrollTo(0,0)}
+document.getElementById('mtabs').addEventListener('click',e=>{const b=e.target.closest('[data-mp]');if(b)setMP(b.dataset.mp)});
 let saveT;function upd(){phone.update(cfg);clearTimeout(saveT);saveT=setTimeout(()=>{try{localStorage.setItem('ifb-v3',JSON.stringify(cfg))}catch(e){}},400)}
 let softT;const updSoon=()=>{clearTimeout(softT);softT=setTimeout(upd,120)};
 const getPath=p=>p.split('.').reduce((o,k)=>o[k],cfg);
@@ -691,14 +699,14 @@ function renderBuilder(){
   <div class="sec"><h2><span>✦</span> 기본 설정</h2>
     <div class="two">${fld('잠금 비밀번호','passcode',cfg.passcode)}${fld('폰 시간 고정 (비우면 현재 시각)','time',cfg.time)}</div>
     <div class="f"><label>폰트</label><select data-bind="font"><option value='-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR",sans-serif'>iOS 기본</option><option value='"Malgun Gothic","Noto Sans KR",sans-serif'>고딕</option><option value='"Nanum Myeongjo","Batang",serif'>명조 (소설 감성)</option><option value='"Courier New",monospace'>타자기</option></select></div>
-    ${imgField('잠금·홈 배경화면','wallpaper',cfg.wallpaper||ph('#4f7cc2','#d98ab8','',200,400))}
+    ${fld('홈 화면 앱 이름 (독자가 "홈 화면에 추가"할 때 표시)','appTitle',cfg.appTitle)}${imgField('잠금·홈 배경화면','wallpaper',cfg.wallpaper||ph('#4f7cc2','#d98ab8','',200,400))}
     <label class="chk"><input type="checkbox" data-bindc="notifyOn" ${cfg.notifyOn!==false?'checked':''}> 잠금화면에 읽지 않은 DM 알림 표시</label></div>
   <div class="sec"><h2><span>◎</span> 내 인스타 (주인공)</h2>
     <div class="two">${fld('아이디','me.username',m.username)}${fld('이름','me.name',m.name)}</div>${area('소개','me.bio',m.bio,2)}${imgField('프로필 사진','me.avatar',m.avatar)}
     ${fld('내 DM 메모 말풍선 (비우면 "메모 남기기")','me.note',m.note)}<div class="two">${fld('팔로워 수 (비우면 자동)','me.followers',m.followers)}${fld('팔로잉 수','me.following',m.following)}</div>${imgsField('내 스토리 사진','me.stories',m.stories)}${area('스토리별 시간 · 한 줄에 하나, 스토리 순서대로','me.storyTimes',m.storyTimes,2)}${postsEd('me',m.posts)}</div>
   <div class="sec"><h2><span>♡</span> 다른 계정들 (스토리·게시물·DM)</h2>${cfg.accounts.map(accCard).join('')}<button class="ghost" data-act="addAcc">＋ 계정 추가</button></div>
-  ${extraSecs()}<div class="sec"><h2><span>↗</span> 완성 및 내보내기</h2><button class="primary" data-act="exportSite">사이트용으로 내보내기 (.zip)</button><button class="secondary" data-act="exportLink">독자용 링크 만들기</button><button class="secondary" data-act="export">HTML 파일로 저장</button><button class="secondary" data-act="restart">시뮬레이터 처음부터 (잠금화면)</button><button class="secondary" data-act="exportJson">작업 저장 (.json)</button><button class="secondary" data-act="importJson">작업 불러오기 (.json)</button><button class="secondary" data-act="reset">예시 데이터로 초기화</button>
-  <p class="note">시간 라벨이 있는 DM 줄을 넣으면 자동으로 채팅 화면에 시간 칩이 보입니다. 사이트 내보내기는 zip 형태로 만들어 정적 호스팅에 올리면 바로 사이트처럼 동작합니다.</p></div>`;
+  ${extraSecs()}<div class="sec"><h2><span>↗</span> 완성 및 내보내기</h2><button class="primary" data-act="export">독자용 HTML 내보내기</button><button class="secondary" data-act="restart">시뮬레이터 처음부터 (잠금화면)</button><button class="secondary" data-act="exportJson">작업 저장 (.json)</button><button class="secondary" data-act="importJson">작업 불러오기 (.json)</button><button class="secondary" data-act="reset">예시 데이터로 초기화</button>
+  <p class="note">시간 라벨이 있는 DM 줄을 넣으면 자동으로 채팅 화면에 시간 칩이 보입니다. 내보내면 index.html 파일 하나가 만들어져요. 폰에서는 파일로 열기 어렵기 때문에 아래 방법으로 링크를 만들어 독자에게 보내세요.</p><details class="card" style="margin:10px 0"><summary><b>📱 독자용 링크 만드는 법</b></summary><div style="font-size:12px;line-height:1.7"><b>① Netlify Drop (가장 쉬움, 가입 없이 가능)</b><br>app.netlify.com/drop 접속 → index.html이 들어 있는 폴더를 끌어다 놓기 → 생성된 주소를 독자에게 전달.<br><br><b>② Cloudflare Pages / GitHub Pages</b><br>index.html을 올리면 영구 주소가 생겨요. 내용을 고치면 같은 파일명으로 다시 올리세요.<br><br><b>③ 독자 쪽 팁</b><br>링크를 연 뒤 아이폰은 공유 → "홈 화면에 추가", 안드로이드는 메뉴 → "홈 화면에 추가"를 누르면 앱처럼 전체 화면으로 열려요. 파일명은 꼭 index.html로 두세요.</div></details><p class="note"></p></div>`;
   const sel=document.querySelector('select[data-bind=font]');if(sel){[...sel.options].forEach(o=>{if(o.value===cfg.font)o.selected=true})}
 }
 function loadImg(file,max,sq){return new Promise(res=>{const r=new FileReader();r.onload=()=>{const im=new Image();im.onload=()=>{const sd=sq?Math.min(im.width,im.height):0,sx=sq?(im.width-sd)/2:0,sy=sq?(im.height-sd)/2:0,sw=sq?sd:im.width,sh=sq?sd:im.height,k=Math.min(1,(max||1080)/Math.max(sw,sh)),c=document.createElement('canvas');c.width=Math.round(sw*k);c.height=Math.round(sh*k);const x=c.getContext('2d');x.fillStyle='#000';x.fillRect(0,0,c.width,c.height);x.drawImage(im,sx,sy,sw,sh,0,0,c.width,c.height);res(c.toDataURL('image/jpeg',.86))};im.onerror=()=>res(r.result);im.src=r.result};r.readAsDataURL(file)})}
@@ -712,31 +720,21 @@ bld.addEventListener('change',async e=>{
   if(t.dataset.imgs&&t.files.length){const arr=getPath(t.dataset.imgs);for(const f of t.files)arr.push(await loadImg(f,1080));renderBuilder();upd()}
 });
 function download(name,blob){const u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),2000)}
+function makeIcon(){
+  const c=document.createElement('canvas');c.width=c.height=180;const x=c.getContext('2d');
+  const g=x.createLinearGradient(0,180,180,0);[['#feda75',0],['#fa7e1e',.25],['#d62976',.5],['#962fbf',.75],['#4f5bd5',1]].forEach(a=>g.addColorStop(a[1],a[0]));
+  x.fillStyle=g;x.fillRect(0,0,180,180);x.strokeStyle='#fff';x.lineWidth=11;x.lineCap='round';
+  x.beginPath();x.roundRect?x.roundRect(36,36,108,108,32):x.rect(36,36,108,108);x.stroke();
+  x.beginPath();x.arc(90,90,25,0,7);x.stroke();x.fillStyle='#fff';x.beginPath();x.arc(124,56,6.5,0,7);x.fill();
+  return c.toDataURL('image/png');
+}
 function exportReader(){
   const css=document.getElementById('phoneCss').textContent;
   const data=JSON.stringify(cfg).replace(/</g,'\\u003c').replace(/\u2028/g,'\\u2028').replace(/\u2029/g,'\\u2029');
-  const html='<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="apple-mobile-web-app-capable" content="yes"><title>Interactive Fiction</title><style>'+css+'html,body{margin:0;height:100%;background:#d9d8de;overscroll-behavior:none}body{display:flex;justify-content:center;align-items:center;overflow:hidden}.stage{width:100vw;height:100vh;height:100dvh;display:flex;justify-content:center;align-items:center;overflow:hidden}</style></head><body><div class="stage"><div class="device" id="dev"><div class="island"></div><div id="scr"></div></div></div><script>const CFG='+data+';'+mountPhone.toString()+';'+fitDevice.toString()+';mountPhone(document.getElementById("scr"),CFG);const dv=document.getElementById("dev");const ft=()=>fitDevice(dv,18,true);addEventListener("resize",ft);ft();<\/script></body></html>';
-  download('독자용_인터랙티브_스토리.html',new Blob([html],{type:'text/html;charset=utf-8'}));
-}
-async function exportSite(){
-  const css=document.getElementById('phoneCss').textContent;
-  const siteHtml='<!doctype html>\n<html lang="ko">\n<head>\n  <meta charset="utf-8">\n  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">\n  <title>Interactive Fiction</title>\n  <style>'+css+'html,body{margin:0;height:100%;background:#d9d8de;overscroll-behavior:none}body{display:flex;justify-content:center;align-items:center;overflow:hidden}.stage{width:100vw;height:100vh;height:100dvh;display:flex;justify-content:center;align-items:center;overflow:hidden}</style>\n</head>\n<body>\n  <div class=\"stage\">\n    <div class=\"device\" id=\"dev\"><div class=\"island\"></div><div id=\"scr\"></div></div>\n  </div>\n  <script>\n    const CFG_URL = \"config.json\";\n    const loadCfg = async () => {\n      const res = await fetch(CFG_URL, { cache: \"no-store\" });\n      if (!res.ok) throw new Error(\"config.json 로드 실패\");\n      return await res.json();\n    };\n    const boot = async () => {\n      const CFG = await loadCfg();\n      ' + mountPhone.toString() + '\n      ' + fitDevice.toString() + '\n      mountPhone(document.getElementById(\"scr\"), CFG);\n      const dv = document.getElementById(\"dev\");\n      const ft = () => fitDevice(dv, 18, true);\n      addEventListener(\"resize\", ft); ft();\n    };\n    boot();\n  <\\/script>\n</body>\n</html>';
-  try {
-    const jszipScript = document.createElement('script');
-    jszipScript.src = 'https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js';
-    jszipScript.onload = () => {
-      const zip = new JSZip();
-      zip.file('index.html', siteHtml);
-      zip.file('config.json', JSON.stringify(cfg));
-      zip.generateAsync({ type: 'blob' }).then(blob => download('interactive-fiction-site.zip', blob));
-    };
-    jszipScript.onerror = () => {
-      alert('사이트용 ZIP 생성에 필요한 라이브러리를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.');
-    };
-    document.body.appendChild(jszipScript);
-  } catch (e) {
-    alert('사이트용 ZIP 생성 중 오류가 발생했어요: ' + (e && e.message ? e.message : e));
-  }
+  const ttl=esc((cfg.appTitle||'').trim()||'Interactive Fiction'),icon=makeIcon();
+  const mf=encodeURIComponent(JSON.stringify({name:(cfg.appTitle||'').trim()||'Interactive Fiction',short_name:((cfg.appTitle||'').trim()||'Interactive Fiction').slice(0,12),display:'standalone',orientation:'portrait',background_color:'#000000',theme_color:'#000000',icons:[{src:icon,sizes:'180x180',type:'image/png'}]}));
+  const html='<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="'+ttl+'"><meta name="theme-color" content="#000000"><link rel="apple-touch-icon" href="'+icon+'"><link rel="icon" href="'+icon+'"><link rel="manifest" href="data:application/manifest+json,'+mf+'"><title>'+ttl+'</title><style>'+css+'html,body{margin:0;height:100%;background:#d9d8de;overscroll-behavior:none}body{display:flex;justify-content:center;align-items:center;overflow:hidden}.stage{width:100vw;height:100vh;height:100dvh;display:flex;justify-content:center;align-items:center;overflow:hidden}</style></head><body><div class="stage"><div class="device" id="dev"><div class="island"></div><div id="scr"></div></div></div><script>const CFG='+data+';'+mountPhone.toString()+';'+fitDevice.toString()+';mountPhone(document.getElementById("scr"),CFG);const dv=document.getElementById("dev");const ft=()=>fitDevice(dv,18,true);addEventListener("resize",ft);ft();<\/script></body></html>';
+  download('index.html',new Blob([html],{type:'text/html;charset=utf-8'}));
 }
 bld.addEventListener('click',e=>{
   const t=e.target.closest('button,[data-act],[data-rm],[data-add]');if(!t)return;
@@ -747,10 +745,8 @@ bld.addEventListener('click',e=>{
   else if(a==='addAcc'){const id=uid();open.add(id);cfg.accounts.push({id,username:'new_user',name:'새 친구',bio:'',note:'',avatar:sil('#9ec5f0'),stories:[sty('#89f7fe','#66a6ff','✨')],posts:[newPost()],dm:'2026-10-23 18:00 | 안녕!',replyText:'2026-10-23 18:10 | ㅋㅋ 그러게',dmAgo:'방금'});renderBuilder();upd()}
   else if(a==='addMemo'){cfg.memos.push({title:'새 메모',body:'',date:'오늘'});renderBuilder();upd()}
   else if(a==='addSms'){cfg.sms.push({id:uid(),name:'새 연락처',date:'오늘',time:'',thread:'2026-10-23 18:00 | 안녕!',reply:'2026-10-23 18:05 | 반가워'});renderBuilder();upd()}
-  else if(a==='exportLink')makeLink();
   else if(a==='export')exportReader();
-  else if(a==='exportSite')exportSite();
-  else if(a==='restart'){phone.restart()}
+  else if(a==='restart'){phone.restart();if(innerWidth<=850)setMP('prev')}
   else if(a==='exportJson')download('interactive-fiction-project.json',new Blob([JSON.stringify(cfg)],{type:'application/json'}));
   else if(a==='importJson')document.getElementById('jsonIn').click();
   else if(a==='reset'){if(confirm('모든 설정이 예시 데이터로 바뀌어요. 계속할까요?')){cfg=defaultCfg();renderBuilder();upd()}}
